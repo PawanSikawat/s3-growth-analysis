@@ -4,5 +4,5 @@
     "only_standard_storage": true,
     "all_storage_types": false,
     "custom_storage_types": [],
-    "use_cached": true
+    "use_cached": false
 }
