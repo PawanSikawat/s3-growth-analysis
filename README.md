@@ -1,6 +1,8 @@
 # s3_growth_analysis
 Analyse the size of the buckets in your account and get the list of top growth buckets
 
+# Run Command
+python3 main_final.py
 
 # Description of input_configs
 through_profile: Creates boto3 session through profile. If set to False, it will look for aws creds in the environment variable - AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN
