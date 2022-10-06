@@ -1,0 +1,8 @@
+{
+    "through_profile": true,
+    "profile_name": null,
+    "only_standard_storage": true,
+    "all_storage_types": false,
+    "custom_storage_types": [],
+    "use_cached": true
+}
