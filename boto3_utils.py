@@ -50,9 +50,9 @@ def get_bucket_tags(bucket, region) -> Union[list[dict], None]:
 def get_bucket_metrics(session: boto3.Session) -> list[BucketMetrics]:
     # generates a list of BucketMetrics (name, region, tags) objects for all available S3 buckets in the account
     s3_client = session.client('s3')
-    buckets = session.resource('s3').buckets.all()
+    buckets = list(session.resource('s3').buckets.all())
     bucket_metrics = []
-    for bucket in track(buckets, description='Setting Bucket Metadata...'):
+    for bucket in track(buckets, description='[bold red]Setting Bucket Metadata...[/bold red]'):
         region = get_bucket_location(s3_client, bucket.name)
         bucket_metrics.append(BucketMetrics(bucket.name, region, get_bucket_tags(bucket, region), Accessibility.get_accessibility(region)))
     return bucket_metrics
@@ -103,7 +103,7 @@ def set_bucket_size_and_growth(through_profile: bool, profile_name: Union[str, N
     today =  datetime.now()
     _2_days_prior, _30_days_prior, _32_days_prior = today - timedelta(days=2), today - timedelta(days=30), today - timedelta(days=32)
     
-    for bucket_metric in track(bucket_metrics, description='Setting Storage Metrics...'):
+    for bucket_metric in track(bucket_metrics, description='[bold red]Setting Storage Metrics...[/bold red]'):
         # if bucket region is None, that means bucket was inaccessible through the creds used
         if bucket_metric.region is None:
             continue
