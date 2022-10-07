@@ -4,7 +4,7 @@ Analyse the size of the buckets in your account and get the list of top growth b
 # IMPORTANT: Version-2
 - A version 2 of the code is released to develop branch. 
 - This version shows a intuitive Progress Bar in terminal while running for Bucket Metadata and Storage Metrics steps.
-- It also uses multi-threading under the hood for the Bucket Metadata and Storage Metrics steps resulting ~25x speed.
+- It also uses multi-threading under the hood for the Bucket Metadata and Storage Metrics steps resulting in ~25x speed.
 
 
 # Run Command
