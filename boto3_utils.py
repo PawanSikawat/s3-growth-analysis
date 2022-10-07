@@ -3,7 +3,10 @@ import boto3
 import botocore
 from typing import Union
 from retry import retry
+from rich.progress import track
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
+from constant import BUCKET_LIST_SIZE, THREAD_POOL
 from model import Accessibility, AwsCreds, BucketMetrics
 
 
@@ -49,11 +52,17 @@ def get_bucket_tags(bucket, region) -> Union[list[dict], None]:
 def get_bucket_metrics(session: boto3.Session) -> list[BucketMetrics]:
     # generates a list of BucketMetrics (name, region, tags) objects for all available S3 buckets in the account
     s3_client = session.client('s3')
-    buckets = session.resource('s3').buckets.all()
+    buckets = list(session.resource('s3').buckets.all())
     bucket_metrics = []
-    for bucket in buckets:
+
+    def _set_bucket_metrics(bucket) -> None:
         region = get_bucket_location(s3_client, bucket.name)
         bucket_metrics.append(BucketMetrics(bucket.name, region, get_bucket_tags(bucket, region), Accessibility.get_accessibility(region)))
+
+    bucket_lists = [buckets[n:n + BUCKET_LIST_SIZE] for n in range(0, len(buckets), BUCKET_LIST_SIZE)]
+    for bucket_list in track(bucket_lists, description='[bold red]Setting Bucket Metadata...[/bold red]'):
+        with ThreadPoolExecutor(max_workers=THREAD_POOL) as executor:
+            executor.map(_set_bucket_metrics, bucket_list)
     return bucket_metrics
 
 
@@ -102,10 +111,10 @@ def set_bucket_size_and_growth(through_profile: bool, profile_name: Union[str, N
     today =  datetime.now()
     _2_days_prior, _30_days_prior, _32_days_prior = today - timedelta(days=2), today - timedelta(days=30), today - timedelta(days=32)
     
-    for bucket_metric in bucket_metrics:
+    def _calculate_and_set_storage_metrics(bucket_metric: BucketMetrics) -> None:
         # if bucket region is None, that means bucket was inaccessible through the creds used
         if bucket_metric.region is None:
-            continue
+            return
         current_size, prior_month_size = 0.0, 0.0
         # loops over all passed storage types and sums up the result
         for storage_type in storage_types:
@@ -120,6 +129,12 @@ def set_bucket_size_and_growth(through_profile: bool, profile_name: Union[str, N
                 print(f"Couldn't set storage metrics for: {bucket_metric.name} and storage type: {storage_type}")
         # sets the object metrics using the summed up metrics
         bucket_metric.current_size, bucket_metric.monthly_growth = current_size, current_size - prior_month_size
+    
+    bucket_lists = [bucket_metrics[n:n + BUCKET_LIST_SIZE] for n in range(0, len(bucket_metrics), BUCKET_LIST_SIZE)]
+    for bucket_list in track(bucket_lists, description='[bold red]Setting Storage Metrics...[/bold red]'):
+        with ThreadPoolExecutor(max_workers=THREAD_POOL) as executor:
+            executor.map(_calculate_and_set_storage_metrics, bucket_list)
+        
     
     
     
