@@ -3,6 +3,7 @@ import boto3
 import botocore
 from typing import Union
 from retry import retry
+from rich.progress import track
 from datetime import datetime, timedelta
 from model import Accessibility, AwsCreds, BucketMetrics
 
@@ -51,7 +52,7 @@ def get_bucket_metrics(session: boto3.Session) -> list[BucketMetrics]:
     s3_client = session.client('s3')
     buckets = session.resource('s3').buckets.all()
     bucket_metrics = []
-    for bucket in buckets:
+    for bucket in track(buckets, description='Setting Bucket Metadata...'):
         region = get_bucket_location(s3_client, bucket.name)
         bucket_metrics.append(BucketMetrics(bucket.name, region, get_bucket_tags(bucket, region), Accessibility.get_accessibility(region)))
     return bucket_metrics
@@ -102,7 +103,7 @@ def set_bucket_size_and_growth(through_profile: bool, profile_name: Union[str, N
     today =  datetime.now()
     _2_days_prior, _30_days_prior, _32_days_prior = today - timedelta(days=2), today - timedelta(days=30), today - timedelta(days=32)
     
-    for bucket_metric in bucket_metrics:
+    for bucket_metric in track(bucket_metrics, description='Setting Storage Metrics...'):
         # if bucket region is None, that means bucket was inaccessible through the creds used
         if bucket_metric.region is None:
             continue
